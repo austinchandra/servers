@@ -52,7 +52,6 @@ def handler(event, context):
         "body": json.dumps({"status": "ok"})
     }
 
-
 def handle_package_shipped(data: dict):
     order_data = data["order"]
     shipment_data = data["shipment"]
@@ -60,7 +59,7 @@ def handle_package_shipped(data: dict):
 
     order = db.get_order(order_id)
     if order is None:
-        log.error("order not found", service="Printful", webhook="package_shipped", order_id=order_id)
+        log.error("order not found", service="printful", webhook="package_shipped", order_id=order_id)
         return
 
     # Add the new shipment
@@ -70,16 +69,14 @@ def handle_package_shipped(data: dict):
         tracking_url=shipment_data.get("tracking_url"),
     ))
 
-    # Mark as partial unless the order is fulfilled—and ignore states "onhold", etc
+    # Mark as partial unless the order is fulfilled and ignore states "onhold", etc
     printful_status = order_data.get("status")
     new_status = OrderStatus.fulfilled if printful_status == "fulfilled" else OrderStatus.partial
     db.update_order(order_id, status=new_status)
 
-
 def handle_order_fulfilled(data: dict):
     order_id = int(data["order"]["external_id"])
     db.update_order(order_id, status=OrderStatus.fulfilled)
-
 
 def handle_order_failed(data: dict):
     order_id = int(data["order"]["external_id"])
@@ -88,20 +85,18 @@ def handle_order_failed(data: dict):
 def handle_order_put_hold(data: dict):
     # Leave the order unchanged in the database, but notify the admin.
     order_id = int(data["order"]["external_id"])
-    log.info("Order put on hold", service="Printful", webhook="package_shipped", order_id=order_id)
+    log.info("order put on hold", service="printful", webhook="order_put_hold", order_id=order_id)
     notify.text(f"Order {order_id} has been put on hold by Printful.")
     notify.email(
         subject=f"Order {order_id} On Hold",
         message=f"Printful has placed order {order_id} on hold. Please review it in the Printful dashboard."
     )
 
-
 def handle_order_remove_hold(data: dict):
     # Order is back in processing
     order_id = int(data["order"]["external_id"])
-    log.info("Order removed from hold", service="Printful", webhook="package_shipped", order_id=order_id)
+    log.info("order removed from hold", service="printful", webhook="order_remove_hold", order_id=order_id)
     notify.email(
         subject=f"Order {order_id} Back in Processing",
         message=f"Printful has removed the hold on order {order_id}. It is now back in processing."
     )
-
