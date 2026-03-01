@@ -1,9 +1,15 @@
+-- These order statuses reflect the options on Printful. Before sending it to Printful, the status
+-- will be NULL.
+
+-- Failed - Order Placement Failed
+-- Pending - Order Sent for Fulfillment
+-- Partial - Some Items Shipped
+-- Fulfilled - All Items Shipped
 CREATE TYPE order_status AS ENUM (
+  'failed',
   'pending',
-  'placed',
+  'partial',
   'fulfilled',
-  'shipped',
-  'delivered'
 );
 
 CREATE TABLE orders (
@@ -12,7 +18,7 @@ CREATE TABLE orders (
 
   -- Store the customer email and order status.
   email             TEXT NOT NULL,
-  status            order_status NOT NULL DEFAULT 'pending',
+  status            order_status,
 
   -- References to the same order in Stripe and Printful.
   stripe_id         TEXT UNIQUE NOT NULL,
@@ -29,6 +35,16 @@ CREATE TABLE orders (
   -- The price the user pays, and my own cost.
   price             INTEGER NOT NULL,
   cost              INTEGER
+);
+
+CREATE TABLE shipments (
+  -- Use a reference to orders.
+  order_id      INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  -- Store a Printful shipment ID.
+  shipment_id   INTEGER NOT NULL,
+  -- Hopefully this URL works!
+  tracking_url  TEXT,
+  PRIMARY KEY (order_id, shipment_id)
 );
 
 CREATE TABLE order_items (

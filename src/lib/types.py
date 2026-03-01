@@ -13,11 +13,10 @@ class Base(DeclarativeBase):
     pass
 
 class OrderStatus(str, Enum):
+    failed = "failed"
     pending = "pending"
-    placed = "placed"
+    partial = "partial"
     fulfilled = "fulfilled"
-    shipped = "shipped"
-    delivered = "delivered"
 
 class OrderItem(Base):
     __tablename__ = "order_items"
@@ -26,12 +25,20 @@ class OrderItem(Base):
     product_id: Mapped[str] = mapped_column(primary_key=True)
     quantity: Mapped[int] = mapped_column(default=1)
 
+class Shipment(Base):
+    __tablename__ = "shipments"
+
+    order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"), primary_key=True)
+    shipment_id: Mapped[int] = mapped_column(primary_key=True)
+    tracking_url: Mapped[Optional[str]]
+
+
 class Order(Base):
     __tablename__ = "orders"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str]
-    status: Mapped[OrderStatus] = mapped_column(default=OrderStatus.pending)
+    status: Mapped[Optional[OrderStatus]] = mapped_column(default=None)
     stripe_id: Mapped[str] = mapped_column(unique=True)
     printful_id: Mapped[Optional[str]]
     created_at: Mapped[datetime] = mapped_column(default=datetime.now)
@@ -41,3 +48,4 @@ class Order(Base):
     price: Mapped[int]
     cost: Mapped[Optional[int]]
     items: Mapped[list[OrderItem]] = relationship()
+    shipments: Mapped[list[Shipment]] = relationship()
