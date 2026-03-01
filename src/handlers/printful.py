@@ -2,6 +2,7 @@ import json
 from lib.db import Database
 from lib.types import OrderStatus, Shipment
 from lib.logs import Logs
+from lib.notify import Notify
 import os
 from dotenv import load_dotenv
 
@@ -9,6 +10,11 @@ load_dotenv()
 
 db = Database(url=os.getenv("DATABASE_URL"))
 log = Logs(log_group=os.environ["LOG_GROUP"])
+
+notify = Notify(
+    topic_arn=os.environ["SNS_TOPIC_ARN"],
+    phone=os.environ["NOTIFY_PHONE"]
+)
 
 """
 Capture the states of an order from Printful, and for some of these, such as "onhold,"
@@ -83,9 +89,20 @@ def handle_order_put_hold(data: dict):
     # Order is on hold but still pending from our perspective
     order_id = int(data["order"]["external_id"])
     log.info("Order put on hold", order_id=order_id)
+    notify.text(f"Order {order_id} has been put on hold by Printful.")
+    notify.email(
+        subject=f"Order {order_id} On Hold",
+        message=f"Printful has placed order {order_id} on hold. Please review it in the Printful dashboard."
+    )
 
 
 def handle_order_remove_hold(data: dict):
     # Order is back in processing
     order_id = int(data["order"]["external_id"])
     log.info("Order removed from hold", order_id=order_id)
+    notify.text(f"Order {order_id} has been removed from hold and is being processed.")
+    notify.email(
+        subject=f"Order {order_id} Back in Processing",
+        message=f"Printful has removed the hold on order {order_id}. It is now back in processing."
+    )
+
