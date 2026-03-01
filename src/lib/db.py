@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import create_engine
@@ -24,6 +25,7 @@ class Database:
             order = session.get(Order, order_id)
             if order is None:
                 return None
+            kwargs["updated_at"] = datetime.now()
             for key, value in kwargs.items():
                 setattr(order, key, value)
             session.commit()
