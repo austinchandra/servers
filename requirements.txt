@@ -1,3 +1,5 @@
 requests
 stripe
 python-dotenv
+psycopg[binary]
+sqlalchemy
