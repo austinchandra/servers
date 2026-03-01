@@ -2,8 +2,12 @@ import json
 from datetime import datetime
 from lib.db import Database
 from lib.types import OrderStatus, Shipment
+import os
+from dotenv import load_dotenv
 
-db = Database(url="your-db-url")
+load_dotenv()
+
+db = Database(url=os.getenv("DATABASE_URL"))
 
 PRINTFUL_STATUS_MAP = {
     "pending":   OrderStatus.pending,
