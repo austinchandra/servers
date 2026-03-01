@@ -60,7 +60,7 @@ def handle_package_shipped(data: dict):
 
     order = db.get_order(order_id)
     if order is None:
-        log.error("Order not found for package_shipped webhook", order_id=order_id)
+        log.error("order not found", service="Printful", webhook="package_shipped", order_id=order_id)
         return
 
     # Add the new shipment
@@ -86,9 +86,9 @@ def handle_order_failed(data: dict):
     db.update_order(order_id, status=OrderStatus.failed)
 
 def handle_order_put_hold(data: dict):
-    # Order is on hold but still pending from our perspective
+    # Leave the order unchanged in the database, but notify the admin.
     order_id = int(data["order"]["external_id"])
-    log.info("Order put on hold", order_id=order_id)
+    log.info("Order put on hold", service="Printful", webhook="package_shipped", order_id=order_id)
     notify.text(f"Order {order_id} has been put on hold by Printful.")
     notify.email(
         subject=f"Order {order_id} On Hold",
@@ -99,8 +99,7 @@ def handle_order_put_hold(data: dict):
 def handle_order_remove_hold(data: dict):
     # Order is back in processing
     order_id = int(data["order"]["external_id"])
-    log.info("Order removed from hold", order_id=order_id)
-    notify.text(f"Order {order_id} has been removed from hold and is being processed.")
+    log.info("Order removed from hold", service="Printful", webhook="package_shipped", order_id=order_id)
     notify.email(
         subject=f"Order {order_id} Back in Processing",
         message=f"Printful has removed the hold on order {order_id}. It is now back in processing."

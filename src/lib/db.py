@@ -25,6 +25,7 @@ class Database:
             order = session.get(Order, order_id)
             if order is None:
                 return None
+            # Automatically update updated_at so callers do not need to.
             kwargs["updated_at"] = datetime.now()
             for key, value in kwargs.items():
                 setattr(order, key, value)
