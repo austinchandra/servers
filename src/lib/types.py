@@ -1,5 +1,7 @@
 """
-Order, OrderStatus, and OrderItem match the types defined in schema.sql
+Order, OrderStatus, and OrderItem match the types defined in schema.sql. This is
+manually defined, and in a "production" environment with heavier types, using an
+autogeneration tool would be better.
 """
 
 from datetime import datetime

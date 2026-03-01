@@ -3,3 +3,4 @@ stripe
 python-dotenv
 psycopg[binary]
 sqlalchemy
+boto3
