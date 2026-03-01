@@ -4,12 +4,12 @@ import requests
 
 @dataclass
 class PrintfulItem:
-    sync_variant_id: int
+    product_id: int
     quantity: int
 
     def to_dict(self):
         return {
-            "sync_variant_id": self.sync_variant_id,
+            "sync_variant_id": self.product_id,
             "quantity": self.quantity
         }
 
@@ -42,6 +42,7 @@ class PrintfulClient:
         return response.json()
 
     def create_order(self, recipient: PrintfulRecipient, items: list[PrintfulItem], external_id: str):
+        # Set confirm to true to place the order in one step, rather than to stage it in a draft.
         return self._request("POST", "/orders?confirm=true", json={
             "external_id": external_id,
             "recipient": asdict(recipient),
