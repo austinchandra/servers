@@ -12,19 +12,17 @@ class Database:
     def __init__(self, url: str):
         self.engine = create_engine(url)
 
-    """
-    Perform a lookup for a single order using our internal ID.
-    """
-
     def get_order(self, order_id: int) -> Optional[Order]:
+        """
+        Perform a lookup for a single order using our internal ID.
+        """
         with Session(self.engine) as session:
             return session.get(Order, order_id)
 
-    """
-    Update an order with the given fields, e.g. cost=100.
-    """
-
     def update_order(self, order_id: int, **kwargs) -> Optional[Order]:
+        """
+        Update an order with the given fields, e.g. cost=100.
+        """
         with Session(self.engine) as session:
             order = session.get(Order, order_id)
             if order is None:
@@ -37,22 +35,20 @@ class Database:
             session.refresh(order)
             return order
 
-    """
-    Insert or update a new shipment for an order.
-    """
-
     def upsert_shipment(self, shipment: Shipment) -> Shipment:
+        """
+        Insert or update a new shipment for an order.
+        """
         with Session(self.engine) as session:
             shipment = session.merge(shipment)
             session.commit()
             session.refresh(shipment)
             return shipment
 
-    """
-    Write an order to the database, including its items.
-    """
-
     def create_order(self, order: Order) -> Order:
+        """
+        Write an order to the database, including its items.
+        """
         with Session(self.engine) as session:
             session.add(order)
             session.commit()
@@ -65,7 +61,6 @@ class Database:
         whether we should process this checkout, as an "idempotency
         protection" requested by Stripe.
         """
-
         with Session(self.engine) as session:
             try:
                 session.add(checkout)

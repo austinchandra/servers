@@ -20,7 +20,6 @@ def begin_fulfillment(session_id: str, event_type: str):
     Begin fulfilling a checkout session on successful payment,
     using an idempotent operation as required by Stripe.
     """
-
     checkout = StripeCheckout(id=session_id)
     should_process = db.record_stripe_checkout(checkout)
     if not should_process:
@@ -34,7 +33,6 @@ def process_webhook_request(payload: Any, signature: Any):
     """
     Validates and processes the request.
     """
-
     try:
         event = stripe.Webhook.construct_event(
             payload, sig_header=signature, secret=get_endpoint_secret()
