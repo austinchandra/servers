@@ -1,17 +1,10 @@
 import os
 
 
-class InvalidPayload(Exception):
+class StripeException(Exception):
     """
-    The payload contained in a Webhook request was invalid.
-    """
-
-    pass
-
-
-class SignatureVerificationFailed(Exception):
-    """
-    The Webhook's signature was invalid.
+    An unknown exception occurred within
+    the Stripe webhook.
     """
 
     pass

@@ -2,10 +2,9 @@ import os
 from typing import Any
 from lib.db import Database
 from lib.stripe import (
+    StripeException,
     get_api_key,
     get_endpoint_secret,
-    InvalidPayload,
-    SignatureVerificationFailed,
 )
 import stripe
 
@@ -18,11 +17,8 @@ stripe.api_key = get_api_key()
 
 def begin_fulfillment(session_id: str, event_type: str):
     """
-    Begins fulfillment process of checkout sessions
-    with a successful payment.
-
-    This operation is idempotent, i.e. fulfillment only
-    occurs at most once regardless of the number of attempts.
+    Begin fulfilling a checkout session on successful payment,
+    using an idempotent operation as required by Stripe.
     """
 
     checkout = StripeCheckouts(id=session_id)
@@ -36,8 +32,7 @@ def begin_fulfillment(session_id: str, event_type: str):
 
 def process_webhook_request(payload: Any, signature: Any):
     """
-    Validates the webhook request and places
-    the processed event on the event pipeline.
+    Validates and processes the request.
     """
 
     try:
@@ -45,9 +40,9 @@ def process_webhook_request(payload: Any, signature: Any):
             payload, sig_header=signature, secret=get_endpoint_secret()
         )
     except ValueError:
-        raise InvalidPayload()
+        raise StripeException()
     except stripe.error.SignatureVerificationError:
-        raise SignatureVerificationFailed()
+        raise StripeException()
 
     if (
         event.type == "checkout.session.completed"

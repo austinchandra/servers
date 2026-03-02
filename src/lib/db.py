@@ -61,9 +61,9 @@ class Database:
 
     def record_stripe_checkout(self, checkout: StripeCheckouts) -> bool:
         """
-        Attempts to record the checkout in the database, returning
-        `True` if this checkout has not been processed yet and `False`
-        otherwise.
+        Attempts to record the checkout in the database, and returns
+        whether we should process this checkout, as an "idempotency
+        protection" requested by Stripe.
         """
 
         with Session(self.engine) as session:

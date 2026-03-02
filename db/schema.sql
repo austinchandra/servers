@@ -57,10 +57,8 @@ CREATE TABLE order_items (
   PRIMARY KEY (order_id, product_id)
 );
 
--- Checkout sessions processed by the Stripe webhook. Used to ensure
--- idempotency.
 CREATE TABLE stripe_checkouts (
-  -- The unique id of the checkout session created by Stripe.
+  -- The Stripe checkout session used for idempotency protection
   id TEXT PRIMARY KEY,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
