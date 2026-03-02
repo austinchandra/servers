@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from .types import Order, Shipment, StripeCheckouts
+from .types import Order, Shipment, StripeCheckout
 
 
 class Database:
@@ -59,7 +59,7 @@ class Database:
             session.refresh(order)
             return order
 
-    def record_stripe_checkout(self, checkout: StripeCheckouts) -> bool:
+    def record_stripe_checkout(self, checkout: StripeCheckout) -> bool:
         """
         Attempts to record the checkout in the database, and returns
         whether we should process this checkout, as an "idempotency

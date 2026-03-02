@@ -57,7 +57,7 @@ class Order(Base):
     shipments: Mapped[list[Shipment]] = relationship()
 
 
-class StripeCheckouts(Base):
+class StripeCheckout(Base):
     __tablename__ = "stripe_checkouts"
 
     id: Mapped[str] = mapped_column(primary_key=True)

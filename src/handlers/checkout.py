@@ -8,7 +8,7 @@ from lib.stripe import (
 )
 import stripe
 
-from lib.types import StripeCheckouts
+from lib.types import StripeCheckout
 
 
 db = Database(url=os.getenv("DATABASE_URL"))
@@ -21,7 +21,7 @@ def begin_fulfillment(session_id: str, event_type: str):
     using an idempotent operation as required by Stripe.
     """
 
-    checkout = StripeCheckouts(id=session_id)
+    checkout = StripeCheckout(id=session_id)
     should_process = db.record_stripe_checkout(checkout)
     if not should_process:
         return
