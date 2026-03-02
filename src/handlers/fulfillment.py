@@ -1,12 +1,12 @@
 import stripe
 from lib.stripe import get_api_key
-from lib.types import CheckoutSession
+from lib.types import StripeCheckouts
 
 
 stripe.api_key = get_api_key()
 
 
-def process_fulfillment(session: CheckoutSession):
+def process_fulfillment(session: StripeCheckouts):
     """
     Fulfills a successful checkout session.
     """

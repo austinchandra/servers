@@ -57,9 +57,8 @@ class Order(Base):
     shipments: Mapped[list[Shipment]] = relationship()
 
 
-class CheckoutSession(Base):
+class StripeCheckouts(Base):
     __tablename__ = "stripe_checkouts"
 
     id: Mapped[str] = mapped_column(primary_key=True)
-    event_type: Mapped[str]
     created_at: Mapped[datetime] = mapped_column(default=datetime.now)

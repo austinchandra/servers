@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from .types import Order, Shipment, CheckoutSession
+from .types import Order, Shipment, StripeCheckouts
 
 
 class Database:
@@ -59,19 +59,19 @@ class Database:
             session.refresh(order)
             return order
 
-    def record_stripe_checkout(self, event: CheckoutSession) -> bool:
+    def record_stripe_checkout(self, checkout: StripeCheckouts) -> bool:
         """
-        Attempts to record the event in the database, returning
-        `True` if this event has not been processed yet and `False`
+        Attempts to record the checkout in the database, returning
+        `True` if this checkout has not been processed yet and `False`
         otherwise.
         """
 
         with Session(self.engine) as session:
             try:
-                session.add(event)
+                session.add(checkout)
                 session.commit()
                 return True
             except IntegrityError:
-                # The event has already been processed.
+                # The checkout has already been processed.
                 session.rollback()
                 return False

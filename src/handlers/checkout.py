@@ -9,7 +9,7 @@ from lib.stripe import (
 )
 import stripe
 
-from lib.types import CheckoutSession
+from lib.types import StripeCheckouts
 
 
 db = Database(url=os.getenv("DATABASE_URL"))
@@ -25,8 +25,8 @@ def begin_fulfillment(session_id: str, event_type: str):
     occurs at most once regardless of the number of attempts.
     """
 
-    event = CheckoutSession(id=session_id, event_type=event_type)
-    should_process = db.record_stripe_checkout(event)
+    checkout = StripeCheckouts(id=session_id)
+    should_process = db.record_stripe_checkout(checkout)
     if not should_process:
         return
 
