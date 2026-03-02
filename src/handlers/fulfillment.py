@@ -10,7 +10,6 @@ def process_fulfillment(checkout: StripeCheckout):
     """
     Fulfills a successful checkout session.
     """
-
     # TODO: Make sure fulfillment hasn't already been
     # performed for this checkout.
 

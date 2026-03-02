@@ -1,15 +1,16 @@
 import boto3
 
+
 class Events:
     def __init__(self, namespace: str):
         self.namespace = namespace
         self.cloudwatch = boto3.client("cloudwatch")
 
-    """
-    Logs a successful transaction with inflow and outflow, to call once
-    the order is fully shipped.
-    """
     def transaction(self, inflow: float, outflow: float):
+        """
+        Logs a successful transaction with inflow and outflow, to call once
+        the order is fully shipped.
+        """
         self._metric("Inflow", inflow)
         self._metric("Outflow", outflow)
 
