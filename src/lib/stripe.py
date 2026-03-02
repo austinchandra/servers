@@ -1,15 +1,6 @@
 import os
 
 
-class MissingEnvironmentVariable(Exception):
-    """
-    A required environment variable was not found.
-    """
-
-    def __init__(self, name: str, *args):
-        super().__init__(f"{name} not found in environment", *args)
-
-
 class InvalidPayload(Exception):
     """
     The payload contained in a Webhook request was invalid.
@@ -27,16 +18,8 @@ class SignatureVerificationFailed(Exception):
 
 
 def get_api_key() -> str:
-    key = os.environ.get("STRIPE_API_KEY")
-    if key is None:
-        raise Exception("`STRIPE_API_KEY` not found in environment")
-
-    return key
+    return os.environ["STRIPE_API_KEY"]
 
 
 def get_endpoint_secret() -> str:
-    endpoint_secret = os.environ.get("STRIPE_WEBHOOK_ENDPOINT_SECRET")
-    if endpoint_secret is None:
-        raise Exception("`STRIPE_WEBHOOK_ENDPOINT_SECRET` not found in environment")
-
-    return endpoint_secret
+    os.environ["STRIPE_WEBHOOK_ENDPOINT_SECRET"]
