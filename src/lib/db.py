@@ -2,9 +2,11 @@ from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import create_engine
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from .types import Order, Shipment
+from .types import Order, Shipment, CheckoutSession
+
 
 class Database:
     def __init__(self, url: str):
@@ -13,6 +15,7 @@ class Database:
     """
     Perform a lookup for a single order using our internal ID.
     """
+
     def get_order(self, order_id: int) -> Optional[Order]:
         with Session(self.engine) as session:
             return session.get(Order, order_id)
@@ -20,6 +23,7 @@ class Database:
     """
     Update an order with the given fields, e.g. cost=100.
     """
+
     def update_order(self, order_id: int, **kwargs) -> Optional[Order]:
         with Session(self.engine) as session:
             order = session.get(Order, order_id)
@@ -36,6 +40,7 @@ class Database:
     """
     Insert or update a new shipment for an order.
     """
+
     def upsert_shipment(self, shipment: Shipment) -> Shipment:
         with Session(self.engine) as session:
             shipment = session.merge(shipment)
@@ -46,9 +51,27 @@ class Database:
     """
     Write an order to the database, including its items.
     """
+
     def create_order(self, order: Order) -> Order:
         with Session(self.engine) as session:
             session.add(order)
             session.commit()
             session.refresh(order)
             return order
+
+    def record_stripe_checkout(self, event: CheckoutSession) -> bool:
+        """
+        Attempts to record the event in the database, returning
+        `True` if this event has not been processed yet and `False`
+        otherwise.
+        """
+
+        with Session(self.engine) as session:
+            try:
+                session.add(event)
+                session.commit()
+                return True
+            except IntegrityError:
+                # The event has already been processed.
+                session.rollback()
+                return False
