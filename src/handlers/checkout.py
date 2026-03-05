@@ -2,10 +2,10 @@ import os
 from typing import Any
 from lib.db import Database
 from lib.stripe import (
-    StripeException,
     get_api_key,
     get_endpoint_secret,
 )
+from lib.errors import StripeException
 import stripe
 
 from lib.types import StripeCheckout
