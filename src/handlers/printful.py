@@ -37,7 +37,7 @@ SUPPORTED_EVENTS = {
 
 
 def handler(event, context):
-    """Webhook handler — enqueues the event for async processing."""
+    """Place the Printful event on the queue."""
     body = json.loads(event["body"])
     if body.get("type") in SUPPORTED_EVENTS:
         queue.send(body)
@@ -47,15 +47,16 @@ def handler(event, context):
 
 
 def consumer(event, context):
-    """SQS consumer — processes enqueued Printful events."""
+    """Process the Printful records previously enqueued."""
     handlers = {
-        "package_shipped": handle_package_shipped,
-        "order_fulfilled": handle_order_fulfilled,
-        "order_failed": handle_order_failed,
-        "order_put_hold": handle_order_put_hold,
-        "order_remove_hold": handle_order_remove_hold,
+        "package_shipped": _handle_package_shipped,
+        "order_fulfilled": _handle_order_fulfilled,
+        "order_failed": _handle_order_failed,
+        "order_put_hold": _handle_order_put_hold,
+        "order_remove_hold": _handle_order_remove_hold,
     }
 
+    # Process all queued requests.
     for record in event["Records"]:
         body = json.loads(record["body"])
         fn = handlers.get(body.get("type"))
@@ -63,7 +64,7 @@ def consumer(event, context):
             fn(body["data"])
 
 
-def handle_package_shipped(data: dict):
+def _handle_package_shipped(data: dict):
     """
     Handle a request for a "package shipped" update.
     """
@@ -98,7 +99,7 @@ def handle_package_shipped(data: dict):
     db.update_order(order_id, status=new_status)
 
 
-def handle_order_fulfilled(data: dict):
+def _handle_order_fulfilled(data: dict):
     """
     Handle an "order fulfilled" update by marking as such in the database.
     """
@@ -106,7 +107,7 @@ def handle_order_fulfilled(data: dict):
     db.update_order(order_id, status=OrderStatus.fulfilled)
 
 
-def handle_order_failed(data: dict):
+def _handle_order_failed(data: dict):
     """
     Handle an "order failed" update by marking it in the database.
     """
@@ -114,7 +115,7 @@ def handle_order_failed(data: dict):
     db.update_order(order_id, status=OrderStatus.failed)
 
 
-def handle_order_put_hold(data: dict):
+def _handle_order_put_hold(data: dict):
     """
     Handle an order "placed on hold" by sending a ping to the administrator,
     that is, myself.
@@ -137,7 +138,7 @@ def handle_order_put_hold(data: dict):
     )
 
 
-def handle_order_remove_hold(data: dict):
+def _handle_order_remove_hold(data: dict):
     """
     Handle an order with a hold "removed" by updating myself.
     """
