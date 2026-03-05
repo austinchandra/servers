@@ -10,7 +10,7 @@ import stripe
 
 from lib.types import StripeCheckout
 
-db = Database(url=os.getenv("DATABASE_URL"))
+db = Database(url=os.environ["DATABASE_URL"])
 stripe.api_key = get_api_key()
 
 
