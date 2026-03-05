@@ -3,6 +3,7 @@ from lib.db import Database
 from lib.types import OrderStatus, Shipment
 from lib.logs import Logs
 from lib.notify import Notify
+from lib.errors import OrderNotFoundException
 import os
 from dotenv import load_dotenv
 
@@ -27,6 +28,9 @@ PRINTFUL_STATUS_MAP = {
 
 
 def handler(event, context):
+    """
+    Process the Printful event, depending on the type of webhook received.
+    """
     body = json.loads(event["body"])
     event_type = body.get("type")
 
@@ -47,6 +51,9 @@ def handler(event, context):
 
 
 def handle_package_shipped(data: dict):
+    """
+    Handle a request for a "package shipped" update.
+    """
     order_data = data["order"]
     shipment_data = data["shipment"]
     order_id = int(order_data["external_id"])
@@ -59,7 +66,7 @@ def handle_package_shipped(data: dict):
             webhook="package_shipped",
             order_id=order_id,
         )
-        return
+        raise OrderNotFoundException()
 
     # Add the new shipment
     db.upsert_shipment(
@@ -79,16 +86,26 @@ def handle_package_shipped(data: dict):
 
 
 def handle_order_fulfilled(data: dict):
+    """
+    Handle an "order fulfilled" update by marking as such in the database.
+    """
     order_id = int(data["order"]["external_id"])
     db.update_order(order_id, status=OrderStatus.fulfilled)
 
 
 def handle_order_failed(data: dict):
+    """
+    Handle an "order failed" update by marking it in the database.
+    """
     order_id = int(data["order"]["external_id"])
     db.update_order(order_id, status=OrderStatus.failed)
 
 
 def handle_order_put_hold(data: dict):
+    """
+    Handle an order "placed on hold" by sending a ping to the administrator,
+    that is, myself.
+    """
     # Leave the order unchanged in the database, but notify the admin.
     order_id = int(data["order"]["external_id"])
     log.info(
@@ -108,6 +125,9 @@ def handle_order_put_hold(data: dict):
 
 
 def handle_order_remove_hold(data: dict):
+    """
+    Handle an order with a hold "removed" by updating myself.
+    """
     # Order is back in processing
     order_id = int(data["order"]["external_id"])
     log.info(
