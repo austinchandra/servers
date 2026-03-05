@@ -21,6 +21,8 @@ CREATE TABLE orders (
   status            order_status,
 
   -- References to the same order in Stripe and Printful.
+  -- `stripe_id` has an implicit unique index for efficient
+  -- queries.
   stripe_id         TEXT UNIQUE NOT NULL,
   printful_id       TEXT,
 
@@ -60,5 +62,6 @@ CREATE TABLE order_items (
 CREATE TABLE stripe_checkouts (
   -- The Stripe checkout session used for idempotency protection
   id TEXT PRIMARY KEY,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  is_processed BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

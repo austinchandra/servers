@@ -10,12 +10,11 @@ import stripe
 
 from lib.types import StripeCheckout
 
-
 db = Database(url=os.getenv("DATABASE_URL"))
 stripe.api_key = get_api_key()
 
 
-def begin_fulfillment(session_id: str, event_type: str):
+def begin_fulfillment(session_id: str):
     """
     Begin fulfilling a checkout session on successful payment,
     using an idempotent operation as required by Stripe.
@@ -46,4 +45,4 @@ def process_webhook_request(payload: Any, signature: Any):
         event.type == "checkout.session.completed"
         or event.type == "checkout.session.async_payment_succeeded"
     ):
-        begin_fulfillment(event.data.object["id"], event.type)
+        begin_fulfillment(event.data.object["id"])

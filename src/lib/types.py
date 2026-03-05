@@ -61,4 +61,5 @@ class StripeCheckout(Base):
     __tablename__ = "stripe_checkouts"
 
     id: Mapped[str] = mapped_column(primary_key=True)
+    is_processed: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime] = mapped_column(default=datetime.now)
