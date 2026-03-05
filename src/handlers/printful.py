@@ -1,18 +1,19 @@
 import json
+import os
+from dotenv import load_dotenv
 from lib.db import Database
 from lib.types import OrderStatus, Shipment
 from lib.logs import Logs
 from lib.notify import Notify
 from lib.errors import OrderNotFoundException
-import os
-from dotenv import load_dotenv
+from lib.queue import Queue
 
 load_dotenv()
 
 db = Database(url=os.getenv("DATABASE_URL"))
 log = Logs(log_group=os.environ["LOG_GROUP"])
-
 notify = Notify(topic_arn=os.environ["SNS_TOPIC_ARN"], phone=os.environ["NOTIFY_PHONE"])
+queue = Queue(queue_url=os.environ["PRINTFUL_QUEUE_URL"])
 
 # Capture the states of an order from Printful, and for some of these, such as "onhold,"
 # we prefer to deal with them in the application-level, rather than persist such states
@@ -26,31 +27,44 @@ PRINTFUL_STATUS_MAP = {
     "failed": OrderStatus.failed,
 }
 
+SUPPORTED_EVENTS = {
+    "package_shipped",
+    "order_fulfilled",
+    "order_failed",
+    "order_put_hold",
+    "order_remove_hold",
+}
+
 
 def handler(event, context):
-    """
-    Process the Printful event, depending on the type of webhook received.
-    """
+    """Place the Printful event on the queue."""
     body = json.loads(event["body"])
-    event_type = body.get("type")
-
-    handlers = {
-        "package_shipped": handle_package_shipped,
-        "order_fulfilled": handle_order_fulfilled,
-        "order_failed": handle_order_failed,
-        "order_put_hold": handle_order_put_hold,
-        "order_remove_hold": handle_order_remove_hold,
-    }
-
-    fn = handlers.get(event_type)
-    if fn:
-        fn(body["data"])
+    if body.get("type") in SUPPORTED_EVENTS:
+        queue.send(body)
 
     # Ignore any webhooks not listed, because we are not interested.
     return {"statusCode": 200, "body": json.dumps({"status": "ok"})}
 
 
-def handle_package_shipped(data: dict):
+def consumer(event, context):
+    """Process the Printful records previously enqueued."""
+    handlers = {
+        "package_shipped": _handle_package_shipped,
+        "order_fulfilled": _handle_order_fulfilled,
+        "order_failed": _handle_order_failed,
+        "order_put_hold": _handle_order_put_hold,
+        "order_remove_hold": _handle_order_remove_hold,
+    }
+
+    # Process all queued requests.
+    for record in event["Records"]:
+        body = json.loads(record["body"])
+        fn = handlers.get(body.get("type"))
+        if fn:
+            fn(body["data"])
+
+
+def _handle_package_shipped(data: dict):
     """
     Handle a request for a "package shipped" update.
     """
@@ -85,7 +99,7 @@ def handle_package_shipped(data: dict):
     db.update_order(order_id, status=new_status)
 
 
-def handle_order_fulfilled(data: dict):
+def _handle_order_fulfilled(data: dict):
     """
     Handle an "order fulfilled" update by marking as such in the database.
     """
@@ -93,7 +107,7 @@ def handle_order_fulfilled(data: dict):
     db.update_order(order_id, status=OrderStatus.fulfilled)
 
 
-def handle_order_failed(data: dict):
+def _handle_order_failed(data: dict):
     """
     Handle an "order failed" update by marking it in the database.
     """
@@ -101,7 +115,7 @@ def handle_order_failed(data: dict):
     db.update_order(order_id, status=OrderStatus.failed)
 
 
-def handle_order_put_hold(data: dict):
+def _handle_order_put_hold(data: dict):
     """
     Handle an order "placed on hold" by sending a ping to the administrator,
     that is, myself.
@@ -124,7 +138,7 @@ def handle_order_put_hold(data: dict):
     )
 
 
-def handle_order_remove_hold(data: dict):
+def _handle_order_remove_hold(data: dict):
     """
     Handle an order with a hold "removed" by updating myself.
     """
