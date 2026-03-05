@@ -2,6 +2,20 @@ from dataclasses import asdict, dataclass
 from typing import Optional
 import requests
 
+from lib.types import OrderStatus
+
+# Capture the states of an order from Printful, and for some of these, such as "onhold,"
+# we prefer to deal with them in the application-level, rather than persist such states
+# to the database.
+PRINTFUL_STATUS_MAP = {
+    "pending": OrderStatus.pending,
+    "inprocess": OrderStatus.pending,
+    "onhold": OrderStatus.pending,
+    "inreview": OrderStatus.pending,
+    "fulfilled": OrderStatus.fulfilled,
+    "failed": OrderStatus.failed,
+}
+
 
 @dataclass
 class PrintfulItem:

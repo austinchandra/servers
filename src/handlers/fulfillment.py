@@ -5,24 +5,18 @@ import stripe
 from lib.stripe import get_api_key
 from lib.types import Order, OrderStatus, StripeCheckout
 from lib.db import Database
-from lib.printful import PrintfulClient, PrintfulItem, PrintfulRecipient
+from lib.printful import (
+    PRINTFUL_STATUS_MAP,
+    PrintfulClient,
+    PrintfulItem,
+    PrintfulRecipient,
+)
 from lib.logs import Logs
 
 db = Database(url=os.getenv("DATABASE_URL"))
 printful = PrintfulClient(api_key=os.getenv("PRINTFUL_API_KEY"))
 log = Logs(log_group=os.environ["LOG_GROUP"])
 stripe.api_key = get_api_key()
-
-# Maps Printful order statuses to our internal OrderStatus. Statuses that
-# indicate the order is in progress but not yet shipped (draft, inreview,
-# pending, onhold, inprocess) all map to pending. canceled maps to failed
-# since we have no canceled state.
-_PRINTFUL_STATUS_MAP: dict[str, OrderStatus] = {
-    "failed": OrderStatus.failed,
-    "canceled": OrderStatus.failed,
-    "partial": OrderStatus.partial,
-    "fulfilled": OrderStatus.fulfilled,
-}
 
 
 def process_fulfillment(checkout: StripeCheckout):
@@ -70,9 +64,8 @@ def process_fulfillment(checkout: StripeCheckout):
         for item in order.items
     ]
 
-    # Check if a Printful order already exists for this checkout. This handles
-    # the case where we crashed after calling Printful but before saving the
-    # printful_id — we recover the existing order rather than creating a duplicate.
+    # Perform a lookup so we avoid creating duplicate errors if we already processed
+    # this in a previous call.
     try:
         result = printful.get_order_by_external_id(order.id)
     except requests.HTTPError as e:
@@ -89,5 +82,5 @@ def process_fulfillment(checkout: StripeCheckout):
     db.update_order(
         order.id,
         printful_id=str(printful_order["id"]),
-        status=_PRINTFUL_STATUS_MAP.get(printful_order["status"], OrderStatus.pending),
+        status=PRINTFUL_STATUS_MAP.get(printful_order["status"], OrderStatus.pending),
     )
