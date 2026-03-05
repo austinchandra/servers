@@ -100,7 +100,10 @@ def handle_order_put_hold(data: dict):
     notify.text(f"Order {order_id} has been put on hold by Printful.")
     notify.email(
         subject=f"Order {order_id} On Hold",
-        message=f"Printful has placed order {order_id} on hold. Please review it in the Printful dashboard.",
+        message=(
+            f"Printful has placed order {order_id} on hold. "
+            f"Please review it in the Printful dashboard."
+        ),
     )
 
 
@@ -115,5 +118,8 @@ def handle_order_remove_hold(data: dict):
     )
     notify.email(
         subject=f"Order {order_id} Back in Processing",
-        message=f"Printful has removed the hold on order {order_id}. It is now back in processing.",
+        message=(
+            f"Printful has removed the hold on order {order_id}. "
+            f"It is now back in processing."
+        ),
     )
