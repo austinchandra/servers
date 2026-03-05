@@ -35,6 +35,7 @@ SUPPORTED_EVENTS = {
     "order_remove_hold",
 }
 
+
 def handler(event, context):
     """Webhook handler — enqueues the event for async processing."""
     body = json.loads(event["body"])
@@ -43,6 +44,7 @@ def handler(event, context):
 
     # Ignore any webhooks not listed, because we are not interested.
     return {"statusCode": 200, "body": json.dumps({"status": "ok"})}
+
 
 def consumer(event, context):
     """SQS consumer — processes enqueued Printful events."""
