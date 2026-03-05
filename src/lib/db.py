@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -45,15 +45,24 @@ class Database:
             session.refresh(shipment)
             return shipment
 
-    def create_order(self, order: Order) -> Order:
+    def create_order(self, order: Order) -> tuple[Order, bool]:
         """
         Write an order to the database, including its items.
+        Returns the order and whether it was newly created.
         """
         with Session(self.engine) as session:
-            session.add(order)
-            session.commit()
-            session.refresh(order)
-            return order
+            try:
+                session.add(order)
+                session.commit()
+                session.refresh(order)
+                return order, True
+            except IntegrityError:
+                session.rollback()
+                existing = session.execute(
+                    select(Order).where(Order.stripe_id == order.stripe_id)
+                ).scalar_one()
+
+                return existing, False
 
     def record_stripe_checkout(self, checkout: StripeCheckout) -> bool:
         """

@@ -70,3 +70,9 @@ class PrintfulClient:
         Send a request to get the order with `order_id`.
         """
         return self._request("GET", f"/orders/{order_id}")
+
+    def get_order_by_external_id(self, external_id: str):
+        """
+        Send a request to get the order with `external_id`.
+        """
+        return self._request("GET", f"/orders/@{external_id}")

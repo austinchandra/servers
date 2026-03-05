@@ -60,5 +60,6 @@ CREATE TABLE order_items (
 CREATE TABLE stripe_checkouts (
   -- The Stripe checkout session used for idempotency protection
   id TEXT PRIMARY KEY,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  is_processed BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
