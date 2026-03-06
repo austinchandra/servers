@@ -5,12 +5,14 @@ from lib.stripe import (
     get_api_key,
     get_endpoint_secret,
 )
+from lib.queue import Queue
 from lib.errors import StripeException
 import stripe
 
 from lib.types import StripeCheckout
 
 db = Database(url=os.environ["DATABASE_URL"])
+queue = Queue(queue_url=os.environ["STRIPE_QUEUE_URL"])
 stripe.api_key = get_api_key()
 
 
@@ -24,8 +26,7 @@ def begin_fulfillment(session_id: str):
     if not should_process:
         return
 
-    # TODO: Place this event on the SQS queue for processing.
-    pass
+    queue.send({"id": checkout.id})
 
 
 def process_webhook_request(payload: Any, signature: Any):
