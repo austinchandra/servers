@@ -1,3 +1,4 @@
+import json
 import os
 
 import requests
@@ -17,6 +18,17 @@ db = Database(url=os.getenv("DATABASE_URL"))
 printful = PrintfulClient(api_key=os.getenv("PRINTFUL_API_KEY"))
 log = Logs(log_group=os.environ["LOG_GROUP"])
 stripe.api_key = get_api_key()
+
+
+def handler(event: dict, context):
+    """
+    Entry point invoked by SQS. Processes each record in the event,
+    which should contain a checkout session ID in its body.
+    """
+    for record in event["Records"]:
+        body = json.loads(record["body"])
+        checkout = StripeCheckout(id=body["id"])
+        process_fulfillment(checkout)
 
 
 def process_fulfillment(checkout: StripeCheckout):
