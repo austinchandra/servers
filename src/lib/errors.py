@@ -1,3 +1,9 @@
+class HttpError(Exception):
+    def __init__(self, status: int, message: str):
+        self.status = status
+        self.message = message
+
+
 class StripeException(Exception):
     """
     This error type stands for an error processing a

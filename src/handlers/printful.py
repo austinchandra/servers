@@ -10,7 +10,7 @@ from lib.queue import Queue
 
 load_dotenv()
 
-db = Database(url=os.getenv("DATABASE_URL"))
+db = Database(url=os.environ["DATABASE_URL"])
 log = Logs(log_group=os.environ["LOG_GROUP"])
 notify = Notify(topic_arn=os.environ["SNS_TOPIC_ARN"], phone=os.environ["NOTIFY_PHONE"])
 queue = Queue(queue_url=os.environ["PRINTFUL_QUEUE_URL"])
