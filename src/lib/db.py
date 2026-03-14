@@ -21,12 +21,21 @@ class Database:
 
     def update_order(self, order_id: int, **kwargs) -> Optional[Order]:
         """
-        Update an order with the given fields, e.g. cost=100.
+        Update an order with the given fields, e.g. cost=100, and do not
+        perform the update in case a previous request comes in later and
+        attempts to override the most recent state.
         """
         with Session(self.engine) as session:
             order = session.get(Order, order_id)
             if order is None:
                 return None
+
+            if order.status == "failed" or order.status == "fulfilled":
+                # It would be weird to update an order considered failed,
+                # or one already happy.
+                return None
+            # Pending and partial states receive any updates.
+
             # Automatically update updated_at so callers do not need to.
             kwargs["updated_at"] = datetime.now()
             for key, value in kwargs.items():
