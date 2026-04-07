@@ -1,11 +1,8 @@
 import json
 import os
 
-import requests
-import stripe
-from lib.stripe import get_api_key
-from lib.types import Order, OrderStatus, StripeCheckout
 from lib.db import Database
+from lib.errors import StripeException
 from lib.printful import (
     PRINTFUL_STATUS_MAP,
     PrintfulClient,
@@ -13,11 +10,17 @@ from lib.printful import (
     PrintfulRecipient,
 )
 from lib.logs import Logs
+from lib.queue import Queue
+from lib.types import Order, OrderStatus, Checkout
+import requests
+import stripe
 
-db = Database(url=os.getenv("DATABASE_URL"))
-printful = PrintfulClient(api_key=os.getenv("PRINTFUL_API_KEY"))
+db = Database(url=os.environ("DATABASE_URL"))
 log = Logs(log_group=os.environ["LOG_GROUP"])
-stripe.api_key = get_api_key()
+printful = PrintfulClient(api_key=os.environ("PRINTFUL_API_KEY"))
+queue = Queue(queue_url=os.environ["STRIPE_QUEUE_URL"])
+secret = os.environ["STRIPE_WEBHOOK_ENDPOINT_SECRET"]
+stripe.api_key = os.environ["STRIPE_API_KEY"]
 
 
 def handler(event: dict, context):
@@ -27,13 +30,51 @@ def handler(event: dict, context):
     """
     for record in event["Records"]:
         body = json.loads(record["body"])
-        checkout = StripeCheckout(id=body["id"])
-        process_fulfillment(checkout)
+        checkout = Checkout(id=body["id"])
+        _fulfill_checkout(checkout)
 
 
-def process_fulfillment(checkout: StripeCheckout):
+def consumer(event, context):
     """
-    Fulfills a successful checkout session.
+    Entry point from a purchase receives a request from Stripe and
+    checks for idempotency before adding it to the queue.
+    """
+    try:
+        payload = event["body"]
+        signature = event["headers"]["Stripe-Signature"]
+
+        event = stripe.Webhook.construct_event(
+            payload, sig_header=signature, secret=secret
+        )
+    except ValueError:
+        raise StripeException()
+    except stripe.error.SignatureVerificationError:
+        raise StripeException()
+
+    if (
+        event.type == "checkout.session.completed"
+        or event.type == "checkout.session.async_payment_succeeded"
+    ):
+        _queue_purchase(event.data.object["id"])
+
+
+def _queue_purchase(session_id: str):
+    """
+    Begin fulfilling a checkout session on successful payment,
+    using an idempotent operation as required by Stripe.
+    """
+    checkout = Checkout(id=session_id)
+    should_process = db.record_stripe_checkout(checkout)
+    if not should_process:
+        return
+
+    queue.send({"id": checkout.id})
+
+
+def _fulfill_checkout(checkout: Checkout):
+    """
+    Process a checkout order, updating the database with the new request,
+    and sending it to Printful.
     """
     # Fetch the items purchased and the receipt link.
     session = stripe.checkout.Session.retrieve(
@@ -41,7 +82,10 @@ def process_fulfillment(checkout: StripeCheckout):
         expand=["line_items", "payment_intent.latest_charge"],
     )
 
-    if session.payment_status == "unpaid":
+    # Payment status can either be "paid" or "unpaid" or "not required",
+    # see reference:
+    # https://docs.stripe.com/api/checkout/sessions/object#checkout_session_object-payment_status
+    if session.payment_status != "paid":
         return
 
     log.info(session.line_items.data)

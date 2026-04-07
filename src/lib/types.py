@@ -49,7 +49,6 @@ class Order(Base):
     printful_id: Mapped[Optional[str]]
     created_at: Mapped[datetime] = mapped_column(default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(default=datetime.now)
-    receipt_url: Mapped[str]
     tracking_url: Mapped[Optional[str]]
     price: Mapped[int]
     cost: Mapped[Optional[int]]
@@ -57,8 +56,8 @@ class Order(Base):
     shipments: Mapped[list[Shipment]] = relationship()
 
 
-class StripeCheckout(Base):
-    __tablename__ = "stripe_checkouts"
+class Checkout(Base):
+    __tablename__ = "checkouts"
 
     id: Mapped[str] = mapped_column(primary_key=True)
     is_processed: Mapped[bool] = mapped_column(default=False)

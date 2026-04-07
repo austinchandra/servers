@@ -30,8 +30,7 @@ CREATE TABLE orders (
   created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
-  -- The URL of the Stripe receipt, and the tracking link, when available.
-  receipt_url       TEXT NOT NULL,
+  -- The tracking link, when available.
   tracking_url      TEXT,
 
   -- The price the user pays, and my own cost.
@@ -59,7 +58,7 @@ CREATE TABLE order_items (
   PRIMARY KEY (order_id, product_id)
 );
 
-CREATE TABLE stripe_checkouts (
+CREATE TABLE checkouts (
   -- The Stripe checkout session used for idempotency protection
   id TEXT PRIMARY KEY,
   is_processed BOOLEAN NOT NULL DEFAULT FALSE,
