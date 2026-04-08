@@ -4,7 +4,7 @@ import os
 from lib.db import Database
 from lib.errors import StripeException
 from lib.printful import (
-    PRINTFUL_STATUS_MAP,
+    PRINTFUL_STATUS,
     PrintfulClient,
     PrintfulItem,
     PrintfulRecipient,
@@ -15,9 +15,9 @@ from lib.types import Order, OrderStatus, Checkout
 import requests
 import stripe
 
-db = Database(url=os.environ("DATABASE_URL"))
+db = Database(url=os.environ["DATABASE_URL"])
 log = Logs(log_group=os.environ["LOG_GROUP"])
-printful = PrintfulClient(api_key=os.environ("PRINTFUL_API_KEY"))
+printful = PrintfulClient(api_key=os.environ["PRINTFUL_API_KEY"])
 queue = Queue(queue_url=os.environ["STRIPE_QUEUE_URL"])
 secret = os.environ["STRIPE_WEBHOOK_ENDPOINT_SECRET"]
 stripe.api_key = os.environ["STRIPE_API_KEY"]
@@ -112,7 +112,7 @@ def _fulfill_checkout(checkout: Checkout):
         city=shipping.address.city,
         state_code=shipping.address.state,
         country_code=shipping.address.country,
-        zip=shipping.address.postal_code,
+        zip_code=shipping.address.postal_code,
         email=session.customer_details.email,
     )
     items = [
@@ -138,5 +138,5 @@ def _fulfill_checkout(checkout: Checkout):
     db.update_order(
         order.id,
         printful_id=str(printful_order["id"]),
-        status=PRINTFUL_STATUS_MAP.get(printful_order["status"], OrderStatus.pending),
+        status=PRINTFUL_STATUS.get(printful_order["status"], OrderStatus.pending),
     )

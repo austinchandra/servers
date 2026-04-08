@@ -1,14 +1,12 @@
 import json
 import os
-from dotenv import load_dotenv
+
 from lib.db import Database
 from lib.types import OrderStatus, Shipment
 from lib.logs import Logs
 from lib.notify import Notify
 from lib.errors import OrderNotFoundException
 from lib.queue import Queue
-
-load_dotenv()
 
 db = Database(url=os.environ["DATABASE_URL"])
 log = Logs(log_group=os.environ["LOG_GROUP"])

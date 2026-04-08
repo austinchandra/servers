@@ -15,6 +15,10 @@ class Events:
         self._metric("Outflow", outflow)
 
     def _metric(self, name: str, value: float, unit: str = "None"):
+        """
+        Records an increase in a certain value, typically for a cost or for
+        incoming revenue.
+        """
         self.cloudwatch.put_metric_data(
             Namespace=self.namespace,
             MetricData=[{"MetricName": name, "Value": value, "Unit": unit}],

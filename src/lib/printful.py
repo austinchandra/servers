@@ -4,10 +4,9 @@ import requests
 
 from lib.types import OrderStatus
 
-# Capture the states of an order from Printful, and for some of these, such as "onhold,"
-# we prefer to deal with them in the application-level, rather than persist such states
-# to the database.
-PRINTFUL_STATUS_MAP = {
+# Store the Printful order states, using "pending" as a default when we are not
+# interested in performing any custom logic.
+PRINTFUL_STATUS = {
     "pending": OrderStatus.pending,
     "inprocess": OrderStatus.pending,
     "onhold": OrderStatus.pending,
@@ -22,7 +21,11 @@ class PrintfulItem:
     product_id: int
     quantity: int
 
-    def to_dict(self):
+    def json(self):
+        """
+        Converts the native Python object to a dictionary for the purposes of
+        performing a JSON request.
+        """
         return {"sync_variant_id": self.product_id, "quantity": self.quantity}
 
 
@@ -30,11 +33,11 @@ class PrintfulItem:
 class PrintfulRecipient:
     name: str
     address1: str
+    address2: Optional[str] = None
     city: str
     country_code: str
-    zip: str
+    zip_code: str
     state_code: Optional[str] = None
-    address2: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
 
@@ -75,7 +78,7 @@ class PrintfulClient:
             json={
                 "external_id": external_id,
                 "recipient": asdict(recipient),
-                "items": [item.to_dict() for item in items],
+                "items": [item.json() for item in items],
             },
         )
 

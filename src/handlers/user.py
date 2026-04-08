@@ -1,12 +1,8 @@
 import json
 import os
 
-from dotenv import load_dotenv
-
 from lib.db import Database
 from lib.errors import HttpError
-
-load_dotenv()
 
 db = Database(url=os.environ["DATABASE_URL"])
 

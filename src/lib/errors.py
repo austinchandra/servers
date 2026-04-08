@@ -1,4 +1,9 @@
 class HttpError(Exception):
+    """
+    This wraps an HTTP error, such as a 404 or 400, or similar,
+    such that we can return it to the caller.
+    """
+
     def __init__(self, status: int, message: str):
         self.status = status
         self.message = message
